@@ -83,7 +83,7 @@
 )
 
 (define (about-app)
-  (message-box "About Watch It!"
+  (message-box "About Watch It! v0.1"
                #<<EOF
 This application hastily put together by
 Chris F Ravenscroft (cyansmoker)
@@ -94,7 +94,7 @@ the app tries to make the 'dimmed' screen similar to the 'awake' one.
 
 Note that this is very preliminary and will likely not work with LUA scripts.
 
-The Racket source code should be available at http://github.com/fusion
+The Racket source code should be available at https://github.com/Fusion/Watch-It-
 
 EOF
                #f
