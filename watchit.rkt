@@ -4,6 +4,16 @@
 (require file/unzip)
 (require file/zip)
 
+;; export for testing
+(provide process-dim-color process-line)
+
+;; first, some sugar
+(define-syntax-rule (while condition body ...)
+  (let Ͻ ()
+    (when condition
+      body ...
+      (Ͻ))))
+
 ;; special case: dimmed color
 (define (process-dim-color line)
   (define matched (regexp-match #rx"color=\"(.+?)\"" line))
@@ -58,19 +68,18 @@
 ;; select a package to process
 (define (go-go-go)
   (define do-while-done #f)
-  (let do-while ()
-    (when (equal? do-while-done #f)
-      (define file-name (get-file "Select a watch file to convert" #f #f #f #f null '(("Any" "*.watch"))))
-      (cond
-        [(equal? file-name #f) (set! do-while-done #t)]
-        [(not (equal? (regexp-match "-patched." file-name) #f))
-         (message-box "All done." "Please do not select a file that was already patched." #f '(stop))]
-        [else
-         (process-package file-name)
-         (message-box "All done." "Patched file generation complete." #f '(ok))
-         (set! do-while-done #t)]
-      )
-      (do-while)))
+  (while (equal? do-while-done #f)
+    (define file-name (get-file "Select a watch file to convert" #f #f #f #f null '(("Any" "*.watch"))))
+    (cond
+      [(equal? file-name #f) (set! do-while-done #t)]
+      [(not (equal? (regexp-match "-patched." file-name) #f))
+       (message-box "All done." "Please do not select a file that was already patched." #f '(ok stop))]
+      [else
+       (process-package file-name)
+       (message-box "All done." "Patched file generation complete." #f '(ok))
+       (set! do-while-done #t)]
+    )
+  )
 )
 
 (define (about-app)
@@ -93,26 +102,27 @@ EOF
   )
 )
 
-(define (main-menu)
+(define (main-menu)  
   (define do-while-done #f)
-  (let do-while ()
-    (when (equal? do-while-done #f)
-      (define choice
-        (message-box/custom "Watch It!"
-                            "A small tool that attempts to keep your watch display interesting"
-                            "Convert a watch file"
-                            "About"
-                            "Exit"
-                            #f
-                            '(default=1)
-        )
+  (while (equal? do-while-done #f)
+    (define choice
+      (message-box/custom "Watch It!"
+                          "A small tool that attempts to keep your watch display interesting"
+                          "Convert a watch file"
+                          "About"
+                          "Exit"
+                          #f
+                          '(default=1)
       )
-      (cond
-        [(equal? choice 1) (go-go-go)]
-        [(equal? choice 2) (about-app)]
-        [else (set! do-while-done #t)]
-      )
-      (do-while)))
+    )
+    (cond
+      [(equal? choice 1) (go-go-go)]
+      [(equal? choice 2) (about-app)]
+      [else (set! do-while-done #t)]
+    )
+  )
 )
 
-(main-menu)
+;; only run if invoked as script
+(module+ main
+  (main-menu))
