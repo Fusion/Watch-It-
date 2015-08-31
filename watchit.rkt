@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/base
 
 (require racket/gui)
 (require file/unzip)
@@ -49,20 +49,29 @@
   (define package-name (file-name-from-path package-path)) ; <...>/<package-name>
   (define temp-path (make-temporary-file (string-append (path->string package-name) "-~a") 'directory))  
   (define watch-file (build-path temp-path "watch.xml"))
+  (define p-watch-file (build-path temp-path "watch.pxml"))
   (define tmp-watch-file (build-path temp-path "watch.xml.tmp"))
   (define patched-package-path
     (build-path (path-only package-path) (string-append
                                           (regexp-replace* #rx"\\." (path->string package-name) "-")
                                           "-patched.watch")))
   (unzip package-path (make-filesystem-entry-reader #:dest temp-path))
-  (process-file (open-input-file watch-file)
-                (open-output-file tmp-watch-file #:exists 'replace)
+  (cond
+    [(file-exists? p-watch-file)
+     (message-box "Error." "Unfortunately, I cannot process this file: it is protected." #f '(ok stop))
+     #f
+    ]
+    [else (process-file (open-input-file watch-file)
+                        (open-output-file tmp-watch-file #:exists 'replace)
+          )
+          (rename-file-or-directory tmp-watch-file watch-file #t)
+          (when (file-exists? patched-package-path)
+            (delete-file patched-package-path))
+          (current-directory temp-path)
+          (zip patched-package-path "./")
+          #t
+    ]
   )
-  (rename-file-or-directory tmp-watch-file watch-file #t)
-  (when (file-exists? patched-package-path)
-      (delete-file patched-package-path))
-  (current-directory temp-path)
-  (zip patched-package-path "./")
 )
 
 ;; select a package to process
@@ -73,10 +82,10 @@
     (cond
       [(equal? file-name #f) (set! do-while-done #t)]
       [(not (equal? (regexp-match "-patched." file-name) #f))
-       (message-box "All done." "Please do not select a file that was already patched." #f '(ok stop))]
+       (message-box "Error." "Please do not select a file that was already patched." #f '(ok stop))]
       [else
-       (process-package file-name)
-       (message-box "All done." "Patched file generation complete." #f '(ok))
+       (when (process-package file-name)
+         (message-box "All done." "Patched file generation complete." #f '(ok)))
        (set! do-while-done #t)]
     )
   )
